@@ -118,7 +118,7 @@ public class Board
             for (int y = 0; y < boardSizeY; y++)
             {
                 list.Add(m_cells[x, y].Item);
-                m_cells[x, y].Free();
+                //m_cells[x, y].Free();
             }
         }
 
@@ -138,6 +138,26 @@ public class Board
 
     internal void FillGapsWithNewItems()
     {
+        Dictionary<NormalItem.eNormalType, int> count = new Dictionary<NormalItem.eNormalType, int>();
+        foreach (NormalItem.eNormalType value in Enum.GetValues(typeof(NormalItem.eNormalType)))
+        {
+            count.Add(value, 0);
+        }
+        
+        for (int x = 0; x < boardSizeX; x++)
+        {
+            for (int y = 0; y < boardSizeY; y++)
+            {
+                Cell cell = m_cells[x, y];
+                if (cell.IsEmpty) continue;
+
+                if (cell.Item is NormalItem normalItem)
+                {
+                    count[normalItem.ItemType]++;
+                }
+            }
+        }
+
         for (int x = 0; x < boardSizeX; x++)
         {
             for (int y = 0; y < boardSizeY; y++)
@@ -147,7 +167,38 @@ public class Board
 
                 NormalItem item = new NormalItem();
 
-                item.SetType(Utils.GetRandomNormalType());
+                List<NormalItem.eNormalType> listNb = new List<NormalItem.eNormalType>();
+                if (cell.NeighbourBottom && !cell.NeighbourBottom.IsEmpty && cell.NeighbourBottom.Item is NormalItem bottomItem)
+                {
+                    listNb.Add(bottomItem.ItemType);
+                }
+                if (cell.NeighbourLeft && !cell.NeighbourLeft.IsEmpty && cell.NeighbourLeft.Item is NormalItem leftItem)
+                {
+                    listNb.Add(leftItem.ItemType);
+                }
+                if (cell.NeighbourRight && !cell.NeighbourRight.IsEmpty && cell.NeighbourRight.Item is NormalItem rightItem)
+                {
+                    listNb.Add(rightItem.ItemType);
+                }
+                if (cell.NeighbourUp && !cell.NeighbourUp.IsEmpty && cell.NeighbourUp.Item is NormalItem upItem)
+                {
+                    listNb.Add(upItem.ItemType);
+                }
+
+                int minCount = Int32.MaxValue;
+                NormalItem.eNormalType typeItem = NormalItem.eNormalType.TYPE_ONE;
+                foreach (KeyValuePair<NormalItem.eNormalType, int> pair in count)
+                {
+                    if(listNb.Contains(pair.Key)) continue;
+
+                    if (pair.Value < minCount)
+                    {
+                        minCount = pair.Value;
+                        typeItem = pair.Key;
+                    }
+                }
+
+                item.SetType(typeItem);
                 item.SetView();
                 item.SetViewRoot(m_root);
 
@@ -172,10 +223,8 @@ public class Board
     public void Swap(Cell cell1, Cell cell2, Action callback)
     {
         Item item = cell1.Item;
-        cell1.Free();
         Item item2 = cell2.Item;
         cell1.Assign(item2);
-        cell2.Free();
         cell2.Assign(item);
 
         item.View.DOMove(cell2.transform.position, 0.3f);
