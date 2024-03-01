@@ -14,6 +14,8 @@ public class GameManager : MonoBehaviour
         MOVES
     }
 
+    private eLevelMode m_mode;
+
     public enum eStateGame
     {
         SETUP,
@@ -81,8 +83,22 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void RestartLevel()
+    {
+        ClearLevel();
+        if (m_levelCondition != null)
+        {
+            m_levelCondition.ConditionCompleteEvent -= GameOver;
+
+            Destroy(m_levelCondition);
+            m_levelCondition = null;
+        }
+        LoadLevel(m_mode);
+    }
+
     public void LoadLevel(eLevelMode mode)
     {
+        m_mode = mode;
         m_boardController = new GameObject("BoardController").AddComponent<BoardController>();
         m_boardController.StartGame(this, m_gameSettings);
 
